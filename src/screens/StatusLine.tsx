@@ -685,10 +685,14 @@ function buildHoverDetail(
     case 'cache': {
       const rate = formatCacheHitRate(usage)
       if (usage === undefined || rate === undefined) return null
+      // Providers omit cache splits they don't report (DeepSeek has no cache
+      // writes) and the projection folds that absence into 0, so a zero split
+      // reads as "not reported", not a measured count: list non-zero ones only.
       return (
         <Text wrap="truncate">
-          {dim('cache ')}{rate} · {dim('read ')}{formatTokens(usage.cacheRead)} ·{' '}
-          {dim('write ')}{formatTokens(usage.cacheWrite)} · {dim('input ')}{formatTokens(usage.input)}
+          {dim('cache ')}{rate} · {usage.cacheRead > 0 ? <>{dim('read ')}{formatTokens(usage.cacheRead)} · </> : null}
+          {usage.cacheWrite > 0 ? <>{dim('write ')}{formatTokens(usage.cacheWrite)} · </> : null}
+          {dim('input ')}{formatTokens(usage.input)}
         </Text>
       )
     }

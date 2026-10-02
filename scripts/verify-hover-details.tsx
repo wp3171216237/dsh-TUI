@@ -218,6 +218,27 @@ try {
     await settled(() => !screenHas(term, 'provider test-provider')))
   hover(stdin, 1, 1)
 
+  // H2：cache 悬停只列上游报了数的分项——DeepSeek 不报 cache write，投影把
+  // 缺省折成 0，悬停不能把它显示成 "write 0"（#1175）。
+  instance.rerender(
+    <AlternateScreen>
+      <Box flexDirection="column">
+        <KeySink />
+        <StatusLine channel={{
+          ...channelStub,
+          statusBar: { cache: true },
+          lastUsage: { input: 12_000, output: 0, cacheRead: 500, cacheWrite: 0 },
+        } as never} />
+        <tooltip.TooltipLayer />
+      </Box>
+    </AlternateScreen>,
+  )
+  check('场景 H2 就绪：cache 字段在屏', await settled(() => screenHas(term, '4.0%')))
+  hoverText(stdin, term, '4.0%')
+  check('H2 悬停 cache 给出已上报的 read 分项', await settled(() => screenHas(term, 'read 500')))
+  check('H2 未上报的 write 不显示成 write 0', !screenHas(term, 'write 0'))
+  hover(stdin, 1, 1)
+
   // --- I. 上下文进度条：无标签 + 整条悬停给全量明细 ----------------------
   // I0：纯函数层。ANSI 路径是 ContextBarView 的字符串孪生（同一套列分配与
   // 读出阶梯），先在这里钉死「条上没有类型名」、读出阶梯、压力分档与明细的
